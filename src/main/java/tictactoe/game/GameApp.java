@@ -1,52 +1,58 @@
 package tictactoe.game;
 
-import tictactoe.game.player.AbstractPlayer;
 import tictactoe.game.player.Bot;
-import tictactoe.game.player.Player;
+import tictactoe.game.player.IPlayer;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 public class GameApp implements IGameApp {
 
     private List<Game> games = new ArrayList<Game>();
-    Scanner scanner = new Scanner(System.in);
 
-
-    public void start() throws RemoteException {
-        AbstractPlayer player = createPlayer();
-        boolean botGame, newGame;
-
-        System.out.println("Who do you want to play with? - type 'human' or 'computer'.");
-        botGame = scanner.nextLine().equals("bot");
-
-        System.out.println("Do you want to create a new game or join an existing one? Type 'new' or 'join'.");
-        newGame = scanner.nextLine().equals("new");
-
-        AbstractPlayer secondPlayer = null;
+    public void getGameAndStart(boolean botGame, boolean newGame, IPlayer player) throws RemoteException {
+        IPlayer secondPlayer = null;
+        Game game = null;
         if (botGame) {
+            player.setFigure('O');
             secondPlayer = new Bot("n/n");
-        }
-        if (newGame) {
-            Game game = new Game(player, secondPlayer);
-            games.add(game);
-        } else {
-            for (Game game : games){
-                if (!game.isReady()) {
-                    game.addPlayer(secondPlayer);
-                    break;
+            secondPlayer.setFigure('X');
+            game = new Game(player, secondPlayer);
+        }else {
+            if (newGame) {
+                player.setFigure('O');
+                game = new Game(player, secondPlayer);
+                games.add(game);
+            } else {
+                for (Game gameIter : games){
+                    if (!gameIter.isReady()) {
+                        player.setFigure('X');
+                        game = gameIter;
+                        game.addPlayer(player);
+                        break;
+                    }
                 }
+                if (game == null){
+                    player.printMessage("Sorry, there isn't any game to join. Creating new one...");
+                    player.setFigure('O');
+                    game = new Game(player, secondPlayer);
+                    games.add(game);
+                }
+            }
+        }
+
+
+        if (game.isReady()) {
+            game.begin();
+        } else {
+            synchronized (game) {
+                player.printMessage("Waiting for second player...");
+                game.waitForPlayer();
             }
         }
     }
 
-    private AbstractPlayer createPlayer() throws RemoteException {
-        System.out.println("Type your username: \n");
-
-        return new Player(scanner.nextLine());
-    }
 
 
 

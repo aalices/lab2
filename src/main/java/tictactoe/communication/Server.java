@@ -4,6 +4,8 @@ import tictactoe.game.GameApp;
 import tictactoe.game.IGameApp;
 
 import java.rmi.Naming;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class Server {
@@ -21,15 +23,12 @@ public class Server {
         String port = args[1];
 
         try {
+            Registry reg = LocateRegistry.createRegistry(Integer.parseInt(port));
             gameAppInt = new GameApp();
             IGameApp game = (IGameApp) UnicastRemoteObject.exportObject(gameAppInt, 0);
-            Naming.rebind( "rmi://" + ip + ":" + port +  "/game", game);
+            reg.rebind( "game", game);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private static IGameApp findGame() {
-        return null;
     }
 }
